@@ -22,7 +22,7 @@ uvicorn app:app --reload
 
 This will start the FastAPI application and automatically reload it when changes are made to the code.
 
-You can then access the API at `http://localhost:8000` (Please use this command: uvicorn app:app --port 8080 if the app does not run on port 8000) in your web browser or using tools like cURL or Postman.
+You can then access the API at `http://localhost:8000` (Please use this command: uvicorn app:app --port 8000 if the app does not run on port 8000) in your web browser or using tools like cURL or Postman.
 
 ### Running Unit Tests
 
