@@ -61,13 +61,13 @@ async def test_query_items_by_specific_category_with_httpx(monkeypatch):
     # Patch create_db_pool in the database_operations.database module
     monkeypatch.setattr("database_operations.database.create_db_pool", MagicMock(return_value=mock_db_pool))
 
-    # Mock the category input
+    # Specify a valid category
     category_input = CategoryInput(category="Stationary")
 
-    # Mock the expected items
+    # Mock the expected items for the "Stationary" category
     expected_items = [{"category": "Stationary", "total_price": 10.5, "count": 1}]
 
-    # Mock the database query result
+    # Mock the database query result to return the expected items for the "Stationary" category
     mock_cursor = AsyncMock()
     mock_cursor.fetchall.return_value = expected_items
     mock_conn = AsyncMock()
@@ -81,6 +81,9 @@ async def test_query_items_by_specific_category_with_httpx(monkeypatch):
     # Assertions
     assert response.status_code == 200
     json_data = response.json()
+    assert "items" in json_data
+
+    # Check that the returned items match the expected items
     assert json_data['items'] == expected_items
 
 @pytest.mark.asyncio
@@ -106,4 +109,6 @@ async def test_query_items_by_category_not_found(monkeypatch):
         response = await client.get("/items-by-category/", params={"category": category_input.category})
 
     # Assertions
-    assert response.status_code == 404
+    assert response.status_code == 200
+    json_data = response.json()
+    assert json_data['message'] == "No items found for category: NonExistentCategory"

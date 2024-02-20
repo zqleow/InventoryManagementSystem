@@ -64,6 +64,7 @@ async def test_insert_new_item():
         # Check if the result contains the expected item ID
         assert "id" in result
 
+
 @pytest.mark.asyncio
 async def test_update_existing_item():
     # Define the input item
@@ -116,6 +117,7 @@ async def test_update_existing_item():
     expected_id = "existing_item_id_bytes"
     assert result['id'].strip("b'") == expected_id.encode().hex()
 
+
 @pytest.mark.asyncio
 async def test_get_items_within_date_range():
     # Mock the database pool
@@ -127,8 +129,8 @@ async def test_get_items_within_date_range():
 
     # Define the list of items to be returned by fetchall
     items = [
-        {'id': 'item_id_1', 'name': 'Item 1', 'price': '10.00'},
-        {'id': 'item_id_2', 'name': 'Item 2', 'price': '20.00'}
+        {'id': 'item_id_1', 'name': 'Item 1', 'category': 'Gift', 'price': '10.00'},
+        {'id': 'item_id_2', 'name': 'Item 2', 'category': 'Gift', 'price': '20.00'}
     ]
 
     # Define the expected result
@@ -156,3 +158,23 @@ async def test_get_items_within_date_range():
 
     # Assert the result
     assert result == expected_result
+
+
+@pytest.mark.asyncio
+async def test_get_items_within_date_range_negative():
+    # Mock the database pool
+    mock_db_pool = MagicMock()
+
+    # Set up a date range that does not contain any items
+    date_range = DateRangeInput(dt_from=datetime(2022, 1, 1), dt_to=datetime(2022, 1, 5))
+
+    # Mock the behavior of executing a query that returns no items
+    mock_cursor = AsyncMock()
+    mock_cursor.fetchall.return_value = []
+    mock_db_pool.acquire.return_value.__aenter__.return_value.cursor.return_value.__aenter__.return_value = mock_cursor
+
+    # Call the function under test
+    result = await get_items_within_date_range(date_range, mock_db_pool)
+
+    # Assert that the result is as expected
+    assert result == {"message": "No items found within the specified date range"}

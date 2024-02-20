@@ -12,12 +12,33 @@ The dependencies of the program are already documented in requirements.txt. Plea
 pip install -r requirements.txt
 ```
 
+### Setting up MySQL Database
+
+Run the following command in the directory where Dockerfile is located (main directory):
+
+```sh
+docker build -t db-mysql-image . --load  && docker run -d --name db-mysql-container -p 127.0.0.1:3306:3306 db-mysql-image
+```
+
+This command runs a detached (-d) Docker container from the Docker image. It maps port 3306 of the container to port 3306 on localhost (127.0.0.1:3306:3306).
+
+By specifying 127.0.0.1 before the port numbers, the container's port is only accessible from the localhost interface. This means that connections to port 3306 on your localhost will be forwarded to port 3306 on the Docker container.
+
+Now that Docker container should be running on localhost, and we can connect to it using localhost and port 3306.
+
+We can now use the MySQL CLI or any SQL client of your preference to connect to the database. The credentials to login to the database can be found in the Dockerfile.
+
+```sh
+MYSQL_USER=db_app_user 
+MYSQL_PASSWORD=admin_user 
+```
+
 ### Running the Application
 
 After the dependencies of the program are installed, to run the FastAPI application, use the following command:
 
 ```sh
-uvicorn app:app --reload
+uvicorn app:app
 ```
 
 This will start the FastAPI application and automatically reload it when changes are made to the code.

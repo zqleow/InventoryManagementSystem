@@ -47,11 +47,14 @@ async def get_items_within_date_range(date_range: DateRangeInput, db_pool: aiomy
         cursor = await conn.cursor(aiomysql.cursors.DictCursor)
         async with cursor as cursor:
             # Define the SQL query with parameters
-            sql = "SELECT id, name, price FROM items WHERE last_updated_dt BETWEEN %s AND %s"
+            sql = "SELECT id, name, category, price FROM items WHERE last_updated_dt BETWEEN %s AND %s"
 
             # Execute the query with parameters
             await cursor.execute(sql, (date_range.dt_from, date_range.dt_to))
             items = await cursor.fetchall()
+
+            if not items:
+                return {"message": "No items found within the specified date range"}
 
             # Decode byte strings and convert bytes to UUID where necessary
             for item in items:

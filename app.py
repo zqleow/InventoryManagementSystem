@@ -1,13 +1,13 @@
-from fastapi import FastAPI, Query, HTTPException, Depends
 import aiomysql
+import logging
+from fastapi import FastAPI, Query, HTTPException, Depends
+from database_operations.crud import insert_item, get_items_within_date_range
 from database_operations.models import ItemResponse, DateRangeInput, CategoryInput
 from database_operations.database import create_db_pool
 
 app = FastAPI()
 
 # Configure logging settings
-import logging
-
 logging.basicConfig(level=logging.DEBUG)  # Set logging level to DEBUG
 logger = logging.getLogger(__name__)
 
@@ -15,11 +15,8 @@ logger = logging.getLogger(__name__)
 async def create_item(item: dict, db_pool: aiomysql.Pool = Depends(create_db_pool)):
     try:
         logger.debug("Creating item: %s", item)
-        async with db_pool.acquire() as conn:
-            async with conn.cursor() as cursor:
-                await cursor.execute("INSERT INTO items ...")  # Your insert query here
-                # Commit the transaction if necessary
-        return item
+        created_item = await insert_item(item, db_pool)
+        return created_item
     except aiomysql.MySQLError as e:
         logger.error("Database error occurred: %s", e)
         raise HTTPException(status_code=500, detail="Database error")
@@ -27,13 +24,11 @@ async def create_item(item: dict, db_pool: aiomysql.Pool = Depends(create_db_poo
         logger.error("An error occurred: %s", e)
         raise HTTPException(status_code=500, detail="Internal server error")
 
+
 @app.get("/items/")
 async def query_items_within_date_range(date_range: DateRangeInput, db_pool: aiomysql.Pool = Depends(create_db_pool)):
     try:
-        async with db_pool.acquire() as conn:
-            async with conn.cursor(aiomysql.cursors.DictCursor) as cursor:
-                await cursor.execute("SELECT * FROM items WHERE ...")  # Your query here
-                items_data = await cursor.fetchall()
+        items_data = await get_items_within_date_range(date_range, db_pool)
         return items_data
     except aiomysql.MySQLError as e:
         logger.error("Database error occurred: %s", e)
@@ -41,6 +36,7 @@ async def query_items_within_date_range(date_range: DateRangeInput, db_pool: aio
     except Exception as e:
         logger.error("An error occurred: %s", e)
         raise HTTPException(status_code=500, detail="Internal server error")
+
 
 @app.get("/items-by-category/")
 async def query_items_by_category(
@@ -67,14 +63,12 @@ async def query_items_by_category(
                 await cursor.execute(query, params)
                 items = await cursor.fetchall()
 
-                if not items:
-                    raise HTTPException(status_code=404, detail=f"No items found for category: {category}")
-
-                return {"items": items}
+                return {"items": items} if items else {"message": f"No items found for category: {category}"}
 
     except aiomysql.MySQLError as e:
         logger.error("Database error occurred: %s", e)
         raise HTTPException(status_code=500, detail="Database error")
+
 
 if __name__ == "__main__":
     import uvicorn
